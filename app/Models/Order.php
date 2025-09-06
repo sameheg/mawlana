@@ -2,6 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Order extends Model
+{
+    use HasFactory;
+
+    /**
+     * @var list<string>
+     */
+    protected $fillable = [
+        'total',
+    ];
 use Illuminate\Database\Eloquent\Model;
 use App\Models\OrderItem;
 use App\Enums\PaymentMethod;
