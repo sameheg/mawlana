@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Tenant extends Model
 {
@@ -12,6 +14,17 @@ class Tenant extends Model
     protected $fillable = [
         'name',
         'domain',
+        'api_key',
     ];
+
+    public function settings(): HasOne
+    {
+        return $this->hasOne(TenantSetting::class);
+    }
+
+    public function slaLogs(): HasMany
+    {
+        return $this->hasMany(SlaLog::class);
+    }
 }
 
