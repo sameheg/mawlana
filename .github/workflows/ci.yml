@@ -1,0 +1,76 @@
+name: Laravel CI (Auto Fix Composer)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # مهم عشان نقدر نعمل push
+
+      # إعداد PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, pdo_mysql
+          coverage: none
+
+      # إعداد Composer
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      - name: Auto fix missing composer dependencies
+        run: |
+          echo "🔍 Checking for missing packages..."
+          REQUIRED=$(jq -r '.require | keys[]' composer.json)
+          if [ -f composer.lock ]; then
+            INSTALLED=$(jq -r '.packages | .[].name' composer.lock)
+          else
+            INSTALLED=""
+          fi
+
+          for pkg in $REQUIRED; do
+            if ! echo "$INSTALLED" | grep -q "$pkg"; then
+              echo "⚠️ Missing package: $pkg → installing..."
+              composer require "$pkg" --no-update || true
+            fi
+          done
+
+          # تحديث lock file
+          composer update --lock --no-progress --prefer-dist
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      # Cache Composer
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      # Commit & Push composer.lock (لو اتغير)
+      - name: Commit updated composer.lock
+        run: |
+          if [[ `git status --porcelain composer.lock` ]]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add composer.lock
+            git commit -m "chore: auto-update composer.lock [skip ci]"
+            git push origin HEAD:${GITHUB_REF##*/}
+          else
+            echo "✅ composer.lock is already up to date."
+          fi
+
+      # Run Laravel tests
+      - name: Run Tests
+        run: php artisan test
