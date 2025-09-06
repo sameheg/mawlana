@@ -1,12 +1,13 @@
-name: Laravel Dev Environment
+name: Laravel CI
 
 on:
-  workflow_dispatch:
   push:
+    branches: [ "main" ]
+  pull_request:
     branches: [ "main" ]
 
 jobs:
-  laravel-dev:
+  laravel-tests:
     runs-on: ubuntu-latest
 
     services:
@@ -26,8 +27,7 @@ jobs:
           --health-retries=3
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -55,26 +55,20 @@ jobs:
         cp .env.example .env
         php artisan key:generate
 
-    - name: Run migrations + seed
+    - name: Run migrations
       env:
         DB_CONNECTION: mysql
         DB_DATABASE: laravel
         DB_USERNAME: laravel
         DB_PASSWORD: laravel
         DB_HOST: 127.0.0.1
-      run: php artisan migrate --seed
+      run: php artisan migrate --force
 
-    - name: Serve Laravel
-      run: |
-        nohup php artisan serve --host=0.0.0.0 --port=8000 &
-        sleep 5
-        curl http://127.0.0.1:8000 || true
-
-    - name: Upload Laravel workspace
-      uses: actions/upload-artifact@v4
-      with:
-        name: laravel-workspace
-        path: |
-          .
-          !vendor/**/.git
-          !node_modules/**/.git
+    - name: Run Tests
+      env:
+        DB_CONNECTION: mysql
+        DB_DATABASE: laravel
+        DB_USERNAME: laravel
+        DB_PASSWORD: laravel
+        DB_HOST: 127.0.0.1
+      run: php artisan test
