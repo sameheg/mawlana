@@ -31,9 +31,9 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # 4. Install Dependencies
-      - name: Install Dependencies
-        run: composer update --no-dev --optimize-autoloader
+      # 4. Update Dependencies (بدل install)
+      - name: Update Dependencies
+        run: composer update --no-dev --prefer-dist --optimize-autoloader
 
       # 5. Copy .env file
       - name: Copy .env
