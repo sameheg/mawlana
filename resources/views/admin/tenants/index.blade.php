@@ -33,7 +33,7 @@
         @endforelse
         </tbody>
     </table>
-    <a href="#" class="btn btn-primary">Add Tenant</a>
+    <a href="{{ route('admin.tenants.create') }}" class="btn btn-primary">Add Tenant</a>
 </div>
 </body>
 </html>
