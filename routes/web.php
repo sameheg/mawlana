@@ -8,6 +8,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::view('/kds', 'kds');
 Route::prefix('inventory')->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('recipes', RecipeController::class);
