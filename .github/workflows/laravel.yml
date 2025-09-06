@@ -2,9 +2,9 @@ name: Laravel CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   laravel-tests:
@@ -72,3 +72,12 @@ jobs:
         DB_PASSWORD: laravel
         DB_HOST: 127.0.0.1
       run: php artisan test
+
+  publish:
+    needs: laravel-tests
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Publish package
+      run: echo "Publishing package..."
