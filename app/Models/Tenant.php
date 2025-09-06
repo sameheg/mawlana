@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 
 class Tenant extends Model
 {
     use HasFactory;
+    use Notifiable;
+    use Billable;
 
     protected $fillable = [
         'name',
@@ -25,6 +29,9 @@ class Tenant extends Model
     public function slaLogs(): HasMany
     {
         return $this->hasMany(SlaLog::class);
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
     }
 }
 

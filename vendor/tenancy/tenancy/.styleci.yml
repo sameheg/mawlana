@@ -1,4 +1,0 @@
-preset: recommended
-risky: true
-enabled:
-  - declare_strict_types
