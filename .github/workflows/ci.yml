@@ -1,0 +1,71 @@
+name: Laravel CI (Auto Fix Composer + App Key)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # إعداد PHP
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, intl, pdo_mysql
+          coverage: none
+
+      # Validate composer
+      - name: Validate composer.json
+        run: composer validate --no-check-publish
+
+      # إصلاح أي باكدجات ناقصة
+      - name: Auto fix missing composer dependencies
+        run: |
+          echo "🔍 Checking for missing packages..."
+          REQUIRED=$(jq -r '.require | keys[]' composer.json)
+          if [ -f composer.lock ]; then
+            INSTALLED=$(jq -r '.packages | .[].name' composer.lock)
+          else
+            INSTALLED=""
+          fi
+
+          for pkg in $REQUIRED; do
+            if ! echo "$INSTALLED" | grep -q "$pkg"; then
+              echo "⚠️ Missing package: $pkg → installing..."
+              composer require "$pkg" --no-update || true
+            fi
+          done
+
+          composer update --lock --no-progress --prefer-dist
+
+      - name: Install dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      # Cache Composer
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      # إعداد Laravel قبل الاختبارات
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan config:clear
+          php artisan key:generate --force
+          php artisan migrate --force
+
+      # Run Laravel tests
+      - name: Run Tests
+        run: php artisan test
