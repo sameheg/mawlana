@@ -48,17 +48,22 @@ jobs:
         run: php artisan vendor:publish --tag=tenancy --force
 
       # 8. Run Laravel Migrations
+      - name: Run Laravel Migrations
         run: php artisan migrate --force
 
       # 9. Optimize Laravel
       - name: Optimize Laravel
         run: php artisan optimize:clear
 
-      # 10. Archive Build
+      # 10. Run Laravel Tests
+      - name: Run Tests
+        run: php artisan test --env=testing
+
+      # 11. Archive Build
       - name: Create Build Artifact
         run: zip -r build.zip . -x ".git/*" "tests/*" ".github/*" "storage/logs/*"
 
-      # 11. Commit & Push updated files
+      # 12. Commit & Push updated files
       - name: Commit generated files
         run: |
           git config user.name "github-actions[bot]"
@@ -67,7 +72,7 @@ jobs:
           git commit -m "chore: update composer.lock, configs, and migrations [skip ci]" || echo "No changes to commit"
           git push origin main
 
-      # 12. Smart Version Bump
+      # 13. Smart Version Bump
       - name: Bump version based on commit message
         id: version
         run: |
@@ -111,7 +116,7 @@ jobs:
           git tag "v$NEW_VERSION"
           git push origin main --tags
 
-      # 13. Create GitHub Release
+      # 14. Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
