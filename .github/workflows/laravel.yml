@@ -1,83 +1,67 @@
-name: Laravel CI
+name: Build Laravel 12 with Tenancy
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ main ]
 
 jobs:
-  laravel-tests:
+  build:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: laravel
-          MYSQL_USER: laravel
-          MYSQL_PASSWORD: laravel
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
-    - uses: actions/checkout@v4
+      # 1. Checkout الكود
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, bcmath, intl, pdo_mysql
-        coverage: none
+      # 2. Setup PHP 8.3 + Extensions
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, pdo_mysql, xml, ctype, curl, json, openssl, tokenizer
+          coverage: none
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      # 3. Cache Composer
+      - name: Cache Composer packages
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
-    - name: Install Composer dependencies
-      run: composer install --no-progress --prefer-dist --optimize-autoloader
+      # 4. Install Dependencies
+      - name: Install Dependencies
+        run: composer update --no-dev --optimize-autoloader
 
-    - name: Install Node dependencies
-      run: npm install --legacy-peer-deps
+      # 5. Copy .env file
+      - name: Copy .env
+        run: cp .env.example .env
 
-    - name: Build assets
-      run: npm run build
+      # 6. Generate Laravel APP_KEY
+      - name: Generate Key
+        run: php artisan key:generate
 
-    - name: Setup .env
-      run: |
-        cp .env.example .env
-        php artisan key:generate
+      # 7. Publish Tenancy config & migrations
+      - name: Publish Tenancy Config
+        run: php artisan vendor:publish --tag=tenancy --force
 
-    - name: Run migrations
-      env:
-        DB_CONNECTION: mysql
-        DB_DATABASE: laravel
-        DB_USERNAME: laravel
-        DB_PASSWORD: laravel
-        DB_HOST: 127.0.0.1
-      run: php artisan migrate --force
+      # 8. Run Laravel Migrations
+      - name: Run Migrations
+        run: php artisan migrate --force
 
-    - name: Run Tests
-      env:
-        DB_CONNECTION: mysql
-        DB_DATABASE: laravel
-        DB_USERNAME: laravel
-        DB_PASSWORD: laravel
-        DB_HOST: 127.0.0.1
-      run: php artisan test
+      # 9. Optimize Laravel
+      - name: Optimize Laravel
+        run: php artisan optimize:clear
 
-  publish:
-    needs: laravel-tests
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Publish package
-      run: echo "Publishing package..."
+      # 10. Archive Build
+      - name: Create Build Artifact
+        run: zip -r build.zip . -x ".git/*" "tests/*" ".github/*" "storage/logs/*"
+
+      # 11. Upload Artifact
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-build
+          path: build.zip
