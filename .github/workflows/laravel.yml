@@ -112,7 +112,7 @@ jobs:
           echo "$NEW_VERSION" > $VERSION_FILE
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-          # تحديث APP_VERSION في .env.example فقط (مش .env)
+          # تحديث APP_VERSION في .env.example فقط
           sed -i "/^APP_VERSION=/d" .env.example || true
           echo "APP_VERSION=$NEW_VERSION" >> .env.example
 
@@ -120,8 +120,14 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add VERSION.txt .env.example
           git commit -m "chore: bump version to v$NEW_VERSION and update APP_VERSION [skip ci]" || echo "No changes"
-          git tag "v$NEW_VERSION"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/sameheg/mawlana.git --tags
+
+          # لو التاج موجود بالفعل → نتخطى
+          if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
+            echo "⚠️ Tag v$NEW_VERSION already exists, skipping..."
+          else
+            git tag "v$NEW_VERSION"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/sameheg/mawlana.git "v$NEW_VERSION"
+          fi
 
       # 14. Create GitHub Release
       - name: Create GitHub Release
