@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write   # 👈 مهم علشان github-actions[bot] يعرف يعمل push و tag
+  contents: write   # علشان github-actions[bot] يعرف يعمل push و tag
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # 4. Update Dependencies (include dev)
+      # 4. Update Dependencies (يحافظ على lockfile محدث)
       - name: Update Dependencies
         run: composer update --prefer-dist --optimize-autoloader
 
@@ -72,7 +72,7 @@ jobs:
       - name: Create Build Artifact
         run: zip -r build.zip . -x ".git/*" "tests/*" ".github/*" "storage/logs/*"
 
-      # 12. Commit & Push updated files
+      # 12. Commit & Push updated lock/config/migrations
       - name: Commit generated files
         run: |
           git config user.name "github-actions[bot]"
@@ -112,9 +112,7 @@ jobs:
           echo "$NEW_VERSION" > $VERSION_FILE
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-          # تحديث APP_VERSION في .env و .env.example
-          sed -i "/^APP_VERSION=/d" .env || true
-          echo "APP_VERSION=$NEW_VERSION" >> .env
+          # تحديث APP_VERSION في .env.example فقط (مش .env)
           sed -i "/^APP_VERSION=/d" .env.example || true
           echo "APP_VERSION=$NEW_VERSION" >> .env.example
 
