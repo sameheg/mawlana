@@ -9,7 +9,7 @@ return [
     | The model used to represent tenants.
     |
     */
-    'tenant_model' => \App\Models\Tenant::class,
+    'tenant_model' => App\Models\Tenant::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -24,5 +24,16 @@ return [
         'central_connection' => env('DB_CONNECTION', 'mysql'),
         'tenant_connection' => 'tenant',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Identifier Generation
+    |--------------------------------------------------------------------------
+    |
+    | Determines how tenant IDs are generated. Using UUIDs helps avoid
+    | collisions when provisioning tenants programmatically.
+    |
+    */
+    'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 ];
 
