@@ -7,6 +7,7 @@ use App\Http\Controllers\LoyaltyPointController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ShiftScheduleController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\Auth\TwoFactorController;
 
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\RecipeController;
@@ -37,4 +38,9 @@ Route::view('/kds', 'kds');
 Route::prefix('inventory')->group(function () {
     Route::resource('products', ProductController::class);
     Route::resource('recipes', RecipeController::class);
+});
+
+Route::middleware('auth')->prefix('two-factor')->group(function () {
+    Route::post('enable', [TwoFactorController::class, 'enable']);
+    Route::post('verify', [TwoFactorController::class, 'verify']);
 });
